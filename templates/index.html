@@ -3,178 +3,385 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ college_short }} | PA Control Center</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <title>{{ college_short }} | PA Control Tower</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark: #0b0716;
-            --violet-main: #8b5cf6;
-            --violet-glow: rgba(139, 92, 246, 0.4);
-            --indigo-main: #4f46e5;
-            --magenta-main: #d946ef;
-            --crimson-main: #e11d48;
-            --crimson-glow: rgba(225, 29, 72, 0.4);
-            --emerald: #10b981;
-            --rose: #f43f5e;
-            --glass-bg: rgba(30, 25, 45, 0.4);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
+            --void: #05060c;
+            --deck: #0e1422;
+            --deck-2: #141c30;
+            --deck-3: #1b2540;
+            --amber: #ffb020;
+            --amber-dim: #7a5215;
+            --cyan: #2dd4e8;
+            --cyan-dim: #12505c;
+            --coral: #ff5470;
+            --mint: #34d399;
+            --violet: #7c8cff;
+            --mist: #a9b4cc;
+            --mist-dim: #626e88;
+            --white: #eef2f8;
+            --edge: rgba(255,255,255,0.06);
+            --font-display: 'Space Grotesk', sans-serif;
+            --font-body: 'Inter', sans-serif;
+            --font-mono: 'IBM Plex Mono', monospace;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        /* Independent Scrolling Setup */
-        body {
-            background-color: var(--bg-dark);
-            background-image: 
-                radial-gradient(circle at 15% 10%, rgba(139, 92, 246, 0.1) 0%, transparent 40%),
-                radial-gradient(circle at 85% 90%, rgba(217, 70, 239, 0.1) 0%, transparent 40%);
-            color: var(--text-primary);
-            font-family: 'Poppins', sans-serif;
-            height: 100vh; /* Fixed height for body */
-            display: flex;
-            flex-direction: column;
-            overflow: hidden; /* Stop whole page scroll */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
         }
 
-        .glass-panel {
-            background: var(--glass-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        body {
+            background: var(--void);
+            background-image:
+                radial-gradient(circle at 12% 8%, rgba(255,176,32,0.08) 0%, transparent 38%),
+                radial-gradient(circle at 88% 92%, rgba(45,212,232,0.08) 0%, transparent 38%);
+            color: var(--white);
+            font-family: var(--font-body);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
             position: relative;
         }
 
+        /* ---------- Ambient control-deck horizon ---------- */
+        .grid-floor {
+            position: fixed; left: 0; right: 0; bottom: 0; height: 46vh;
+            background-image:
+                linear-gradient(rgba(255,176,32,.16) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(45,212,232,.12) 1px, transparent 1px);
+            background-size: 46px 46px;
+            transform: perspective(420px) rotateX(72deg);
+            transform-origin: bottom;
+            -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1), transparent 82%);
+            mask-image: linear-gradient(to top, rgba(0,0,0,1), transparent 82%);
+            opacity: .4;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .horizon-glow {
+            position: fixed; left: 0; right: 0; bottom: 46vh; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--amber) 35%, var(--cyan) 65%, transparent);
+            box-shadow: 0 0 32px 4px rgba(255,176,32,.25);
+            opacity: .55; pointer-events: none; z-index: 0;
+        }
+
+        /* ---------- Panel hardware shell ---------- */
+        .panel-3d {
+            background:
+                radial-gradient(circle 3px at 16px 16px, rgba(255,255,255,.22), transparent 60%),
+                radial-gradient(circle 3px at calc(100% - 16px) 16px, rgba(255,255,255,.22), transparent 60%),
+                radial-gradient(circle 3px at 16px calc(100% - 16px), rgba(255,255,255,.16), transparent 60%),
+                radial-gradient(circle 3px at calc(100% - 16px) calc(100% - 16px), rgba(255,255,255,.16), transparent 60%),
+                linear-gradient(165deg, var(--deck-2), var(--deck) 70%);
+            border: 1px solid var(--edge);
+            border-radius: 18px;
+            padding: 26px;
+            box-shadow:
+                0 1px 0 rgba(255,255,255,.05) inset,
+                0 22px 40px -18px rgba(0,0,0,.7),
+                0 2px 0 rgba(0,0,0,.4);
+            position: relative;
+            will-change: transform;
+        }
+        .panel-3d.accent-coral { border-top: 2px solid var(--coral); }
+        .panel-3d.accent-cyan { border-top: 2px solid var(--cyan); }
+
+        /* ---------- Header / Control Tower Deck ---------- */
         header {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 20px 40px; border-bottom: 1px solid var(--glass-border);
-            background: rgba(11, 7, 22, 0.8); backdrop-filter: blur(20px); z-index: 10;
-            flex-shrink: 0; /* Prevent header from shrinking */
+            padding: 16px 40px; border-bottom: 1px solid var(--edge);
+            background: linear-gradient(180deg, rgba(20,28,48,.92), rgba(10,13,22,.92));
+            backdrop-filter: blur(20px); z-index: 10;
+            flex-shrink: 0;
+            box-shadow: 0 1px 0 rgba(255,255,255,.04) inset, 0 12px 30px -14px rgba(0,0,0,.8);
         }
 
-        .brand { display: flex; align-items: center; gap: 16px; }
-        .logo-icon {
-            width: 48px; height: 48px; border-radius: 12px;
-            background: linear-gradient(135deg, var(--violet-main), var(--magenta-main));
+        .brand { display: flex; align-items: center; gap: 18px; }
+
+        .beacon-3d { width: 58px; height: 58px; perspective: 320px; flex-shrink: 0; }
+        .beacon-stage {
+            width: 100%; height: 100%; position: relative;
+            transform-style: preserve-3d;
+            animation: beaconSpin 16s linear infinite;
+        }
+        @keyframes beaconSpin {
+            from { transform: rotateY(0deg) rotateX(10deg); }
+            to   { transform: rotateY(360deg) rotateX(10deg); }
+        }
+        .beacon-ring {
+            position: absolute; inset: 0; border-radius: 50%;
+            border: 2px solid var(--amber-dim);
+            transition: border-color .4s ease, opacity .4s ease;
+        }
+        .beacon-ring.r1 { transform: translateZ(15px) scale(1); opacity: .8; border-color: var(--amber); }
+        .beacon-ring.r2 { transform: translateZ(0px) scale(.76); opacity: .5; }
+        .beacon-ring.r3 { transform: translateZ(-15px) scale(.52); opacity: .3; }
+        .beacon-core {
+            position: absolute; inset: 0; margin: auto; width: 30px; height: 30px; border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, #4a3210, var(--amber-dim) 70%);
+            transform: translateZ(22px);
             display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 1.2rem; color: white;
+            font-family: var(--font-display); font-weight: 700; font-size: .62rem; color: #1a1200;
+            box-shadow: 0 0 14px 2px rgba(255,176,32,.25);
+            transition: background .4s ease, box-shadow .4s ease;
         }
-        .brand-text h1 { font-size: 1.4rem; font-weight: 700; background: linear-gradient(to right, #e2e8f0, #a5b4fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .brand-text h2 { font-size: 0.85rem; color: var(--text-secondary); }
-        
-        .system-stats { display: flex; align-items: center; gap: 24px; }
-        .clock-time { font-family: 'Fira Code', monospace; font-size: 1.2rem; font-weight: 600; color: #fff; }
-        .clock-date { font-family: 'Fira Code', monospace; font-size: 0.75rem; color: var(--violet-main); text-align: right;}
-        
-        /* Interactive Engine Button Styling */
-        .engine-btn {
-            display: flex; align-items: center; gap: 8px;
-            background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3);
-            padding: 10px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; color: var(--rose);
-            cursor: pointer; transition: all 0.3s;
+        .beacon-3d.live .beacon-ring { border-color: var(--mint); }
+        .beacon-3d.live .beacon-ring.r1 { opacity: .9; }
+        .beacon-3d.live .beacon-core {
+            background: radial-gradient(circle at 35% 30%, #d9fff0, var(--mint) 65%, #024d33 100%);
+            box-shadow: 0 0 22px 6px rgba(52,211,153,.55);
+            color: #012417;
         }
-        .engine-btn:hover { background: rgba(244, 63, 94, 0.2); }
-        .engine-btn.online {
-            background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3); color: var(--emerald);
-        }
-        .engine-btn.online:hover { background: rgba(16, 185, 129, 0.2); }
-        
-        .pulse-dot { width: 8px; height: 8px; background: var(--rose); border-radius: 50%; box-shadow: 0 0 10px var(--rose); }
-        .engine-btn.online .pulse-dot { background: var(--emerald); box-shadow: 0 0 10px var(--emerald); animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); } 70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
-
-        /* Scrollable Workspace */
-        .workspace { 
-            display: grid; 
-            grid-template-columns: 430px 1fr; 
-            gap: 32px; 
-            padding: 24px 40px; 
-            height: calc(100vh - 90px); 
-        }
-        
-        /* Individual Scrollbars for columns */
-        .controls-col, .data-col { 
-            overflow-y: auto; 
-            padding-right: 10px; 
-            height: 100%; 
-            padding-bottom: 40px; 
+        .beacon-3d.broadcasting .beacon-stage { animation-duration: 2.4s; }
+        .beacon-3d.broadcasting .beacon-core {
+            background: radial-gradient(circle at 35% 30%, #ffe0e5, var(--coral) 65%, #4c0716 100%);
+            box-shadow: 0 0 26px 8px rgba(255,84,112,.6);
         }
 
-        /* Scrollbar Styling */
+        .brand-text h1 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; letter-spacing: .01em; color: var(--white); }
+        .brand-text h2 {
+            font-family: var(--font-mono); font-size: .68rem; color: var(--mist-dim);
+            text-transform: uppercase; letter-spacing: .14em; margin-top: 3px;
+        }
+
+        .system-stats { display: flex; align-items: center; gap: 22px; }
+
+        .clock-module { text-align: right; }
+        .clock-digits {
+            font-family: var(--font-mono); font-size: 1.3rem; font-weight: 600; color: var(--amber);
+            text-shadow: 0 0 14px rgba(255,176,32,.35); letter-spacing: .04em;
+        }
+        .clock-caption {
+            font-family: var(--font-mono); font-size: .65rem; color: var(--mist-dim);
+            letter-spacing: .12em; margin-top: 2px;
+        }
+
+        /* Power switch (Engine on/off) */
+        .power-switch {
+            display: flex; align-items: center; gap: 10px;
+            background: rgba(255,255,255,.03); border: 1px solid var(--edge);
+            padding: 8px 16px 8px 8px; border-radius: 999px; cursor: pointer;
+            transition: background .25s ease, border-color .25s ease;
+            font-family: var(--font-body);
+        }
+        .power-track {
+            width: 42px; height: 22px; border-radius: 999px; background: rgba(0,0,0,.5);
+            border: 1px solid var(--edge); position: relative; flex-shrink: 0;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,.6);
+        }
+        .power-knob {
+            position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+            background: linear-gradient(160deg, #cbd5e1, var(--coral) 130%);
+            box-shadow: 0 2px 4px rgba(0,0,0,.5), 0 0 8px rgba(255,84,112,.5);
+            transition: transform .28s cubic-bezier(.4,1.6,.6,1), background .28s ease, box-shadow .28s ease;
+        }
+        .power-switch.online { background: rgba(52,211,153,.08); border-color: rgba(52,211,153,.35); }
+        .power-switch.online .power-track { border-color: rgba(52,211,153,.4); }
+        .power-switch.online .power-knob {
+            transform: translateX(20px);
+            background: linear-gradient(160deg, #d9fff0, var(--mint) 130%);
+            box-shadow: 0 2px 6px rgba(0,0,0,.5), 0 0 12px rgba(52,211,153,.65);
+        }
+        .power-label { font-size: .78rem; font-weight: 600; color: var(--mist); white-space: nowrap; }
+        .power-switch.online .power-label { color: var(--mint); }
+
+        /* ---------- Workspace ---------- */
+        .workspace {
+            display: grid;
+            grid-template-columns: 430px 1fr;
+            gap: 30px;
+            padding: 26px 40px;
+            height: calc(100vh - 84px);
+            position: relative; z-index: 1;
+            perspective: 1400px;
+        }
+
+        .controls-col, .data-col { overflow-y: auto; padding-right: 8px; height: 100%; padding-bottom: 40px; }
+
         ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
-        ::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.3); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(139, 92, 246, 0.6); }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,.15); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,176,32,.25); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,176,32,.5); }
 
-        .panel-header { font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
-        .form-group { margin-bottom: 16px; }
-        label { display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 6px; font-weight: 500; text-transform: uppercase; }
-        input[type="text"], input[type="time"], input[type="date"], select, textarea {
-            width: 100%; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 8px; padding: 12px 14px; color: var(--text-primary); font-family: 'Poppins', sans-serif; font-size: 0.9rem;
+        .panel-header {
+            font-family: var(--font-display); font-size: 1.02rem; font-weight: 600; margin-bottom: 20px;
+            display: flex; align-items: center; gap: 10px; letter-spacing: .01em;
         }
-        input:focus, select:focus, textarea:focus { border-color: var(--violet-main); outline: none; }
-        textarea { resize: vertical; min-height: 80px; }
-        .grid-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .panel-eyebrow {
+            font-family: var(--font-mono); font-size: .64rem; letter-spacing: .16em; color: var(--mist-dim);
+            text-transform: uppercase; display: block; margin-bottom: 4px;
+        }
 
-        .panel-crimson { border-top: 3px solid var(--crimson-main); }
-        .panel-violet { border-top: 3px solid var(--violet-main); }
+        .form-group { margin-bottom: 16px; }
+        label {
+            display: block; font-size: .68rem; color: var(--mist-dim); margin-bottom: 7px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: .1em; font-family: var(--font-mono);
+        }
+        input[type="text"], input[type="time"], input[type="date"], select, textarea {
+            width: 100%; background: rgba(0,0,0,.45); border: 1px solid var(--edge);
+            border-radius: 10px; padding: 12px 14px; color: var(--white); font-family: var(--font-body); font-size: .88rem;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,.5);
+            transition: border-color .2s ease, box-shadow .2s ease;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--cyan); outline: none;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,.5), 0 0 0 3px rgba(45,212,232,.15);
+        }
+        textarea { resize: vertical; min-height: 76px; font-family: var(--font-body); }
+        .grid-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; font-family: 'Poppins', sans-serif; font-weight: 600; cursor: pointer; color: white; transition: all 0.3s ease; }
-        .btn-crimson { background: linear-gradient(135deg, var(--crimson-main), #be123c); box-shadow: 0 4px 15px var(--crimson-glow); }
-        .btn-violet { background: linear-gradient(135deg, var(--violet-main), var(--indigo-main)); box-shadow: 0 4px 15px var(--violet-glow); }
-        
-        /* Updated Toggle Group for 3 options */
-        .toggle-group { display: flex; background: rgba(0,0,0,0.4); border-radius: 8px; padding: 4px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 16px; }
-        .toggle-group label { flex: 1; text-align: center; padding: 8px 4px; cursor: pointer; border-radius: 6px; font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); }
+        /* Segmented 3D toggle w/ sliding thumb via :has() */
+        .toggle-group {
+            position: relative; display: flex; background: rgba(0,0,0,.45); border-radius: 10px; padding: 4px;
+            border: 1px solid var(--edge); margin-bottom: 16px; box-shadow: inset 0 2px 5px rgba(0,0,0,.5);
+        }
+        .toggle-group label {
+            position: relative; z-index: 1; flex: 1; text-align: center; padding: 9px 4px; cursor: pointer;
+            border-radius: 7px; font-size: .72rem; font-weight: 600; color: var(--mist-dim);
+            text-transform: none; letter-spacing: 0; font-family: var(--font-body);
+            transition: color .25s ease;
+        }
         .toggle-group input[type="radio"] { display: none; }
-        .toggle-group input[type="radio"]:checked + label { background: var(--violet-main); color: white; }
+        .toggle-thumb {
+            position: absolute; top: 4px; left: 4px; width: calc(33.333% - 4px); height: calc(100% - 8px);
+            border-radius: 7px; background: linear-gradient(160deg, var(--violet), #4c4de0);
+            box-shadow: 0 3px 10px rgba(124,140,255,.4), 0 1px 0 rgba(255,255,255,.15) inset;
+            transition: transform .28s cubic-bezier(.4,1.4,.5,1);
+        }
+        .toggle-group:has(#type_daily:checked) .toggle-thumb { transform: translateX(0%); }
+        .toggle-group:has(#type_weekly:checked) .toggle-thumb { transform: translateX(100%); }
+        .toggle-group:has(#type_onetime:checked) .toggle-thumb { transform: translateX(200%); }
+        .toggle-group label[for="type_daily"] { color: var(--white); }
+        .toggle-group:has(#type_weekly:checked) label[for="type_weekly"],
+        .toggle-group:has(#type_onetime:checked) label[for="type_onetime"],
+        .toggle-group:has(#type_daily:checked) label[for="type_daily"] { color: var(--white); }
 
+        /* 3D keycap buttons */
+        .btn-3d {
+            width: 100%; padding: 15px; border: none; border-radius: 12px;
+            font-family: var(--font-display); font-weight: 600; font-size: .9rem; letter-spacing: .01em;
+            cursor: pointer; color: #0a0a10; position: relative;
+            transform: translateY(0); transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+        }
+        .btn-3d:active { transform: translateY(3px); }
+        .btn-3d.coral {
+            background: linear-gradient(160deg, #ff8098, var(--coral) 55%);
+            box-shadow: 0 5px 0 #a3223c, 0 12px 22px -6px rgba(255,84,112,.5);
+        }
+        .btn-3d.coral:active { box-shadow: 0 1px 0 #a3223c, 0 6px 14px -6px rgba(255,84,112,.5); }
+        .btn-3d.cyan {
+            background: linear-gradient(160deg, #7ee8f5, var(--cyan) 55%);
+            box-shadow: 0 5px 0 #0f6a78, 0 12px 22px -6px rgba(45,212,232,.5);
+        }
+        .btn-3d.cyan:active { box-shadow: 0 1px 0 #0f6a78, 0 6px 14px -6px rgba(45,212,232,.5); }
+        .btn-3d.ghost {
+            background: rgba(255,255,255,.06); color: var(--mist); box-shadow: 0 3px 0 rgba(0,0,0,.3);
+            margin-top: 10px;
+        }
+        .btn-3d.ghost:active { box-shadow: 0 1px 0 rgba(0,0,0,.3); }
+        .btn-3d.hidden { display: none !important; }
+
+        /* ---------- Departure-board schedule table ---------- */
+        .board-wrap { perspective: 1200px; }
         table { width: 100%; border-collapse: collapse; text-align: left; }
-        th { background: rgba(0,0,0,0.2); padding: 14px; font-size: 0.8rem; color: var(--text-secondary); border-bottom: 1px solid var(--glass-border); }
-        td { padding: 16px 14px; border-bottom: 1px solid rgba(255,255,255,0.03); vertical-align: middle; }
-        .row-muted { opacity: 0.4; filter: grayscale(0.5); }
-        
-        .action-btn { background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border); color: var(--text-primary); padding: 6px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; }
-        .action-btn:hover { background: rgba(255,255,255,0.15); }
-        .action-btn.del { color: #fda4af; border-color: rgba(244,63,94,0.3); }
-        .action-btn.edit { color: #a7f3d0; border-color: rgba(16,185,129,0.3); }
+        th {
+            background: rgba(0,0,0,.28); padding: 13px 14px; font-size: .66rem; color: var(--mist-dim);
+            border-bottom: 1px solid var(--edge); text-transform: uppercase; letter-spacing: .12em;
+            font-family: var(--font-mono); font-weight: 600;
+        }
+        tbody tr {
+            transition: transform .22s ease, box-shadow .22s ease, background .22s ease;
+            transform-style: preserve-3d; border-left: 3px solid transparent;
+        }
+        tbody tr:hover {
+            transform: translateZ(8px) scale(1.006);
+            box-shadow: 0 14px 26px -12px rgba(0,0,0,.6);
+            background: rgba(255,255,255,.02);
+            border-left-color: var(--amber);
+        }
+        td { padding: 15px 14px; border-bottom: 1px solid rgba(255,255,255,.03); vertical-align: middle; }
+        td strong { font-family: var(--font-mono); letter-spacing: .02em; }
+        .row-muted { opacity: .38; filter: grayscale(.4); }
+        .row-muted:hover { transform: none; box-shadow: none; border-left-color: transparent; }
 
-        .terminal-box { background: rgba(5, 3, 10, 0.85); border-radius: 12px; padding: 16px; font-family: 'Fira Code', monospace; font-size: 0.75rem; display: grid; gap: 10px; }
-        .log-line { display: flex; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.02); padding-bottom: 6px; }
-        .log-time { color: var(--text-secondary); }
-        
-        /* Custom Delete Modal */
+        .chip-btn {
+            background: rgba(255,255,255,.04); border: 1px solid var(--edge); color: var(--white);
+            padding: 6px 11px; border-radius: 7px; font-size: .72rem; font-weight: 600; cursor: pointer;
+            font-family: var(--font-body); transition: background .18s ease, transform .1s ease;
+        }
+        .chip-btn:hover { background: rgba(255,255,255,.14); }
+        .chip-btn:active { transform: translateY(1px); }
+        .chip-btn.del { color: #ffb3c0; border-color: rgba(255,84,112,.35); }
+        .chip-btn.edit { color: #a7f3d0; border-color: rgba(52,211,153,.35); }
+        .chip-btn.status-on { color: #6ee7b7; border-color: rgba(52,211,153,.4); background: rgba(52,211,153,.08); }
+        .chip-btn.status-off { color: var(--mist-dim); }
+
+        /* ---------- Console / logs (CRT feel) ---------- */
+        .console-panel { position: relative; overflow: hidden; }
+        .console-panel::after {
+            content: ""; position: absolute; inset: 0; pointer-events: none;
+            background: repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0px, transparent 1px, transparent 3px);
+            mix-blend-mode: overlay;
+        }
+        .terminal-box {
+            background: rgba(2,3,8,.8); border: 1px solid var(--edge); border-radius: 12px; padding: 16px;
+            font-family: var(--font-mono); font-size: .74rem; display: grid; gap: 9px;
+            max-height: 320px; overflow-y: auto;
+        }
+        .log-line { display: flex; gap: 8px; border-bottom: 1px solid rgba(255,255,255,.02); padding-bottom: 6px; flex-wrap: wrap; }
+        .log-time { color: var(--mist-dim); }
+
+        /* ---------- Modal ---------- */
         #customModal {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px);
+            position: fixed; inset: 0; background: rgba(0,0,0,.72); backdrop-filter: blur(6px);
             display: none; align-items: center; justify-content: center; z-index: 9999;
         }
         .modal-content {
-            background: var(--glass-bg); border: 1px solid var(--glass-border);
-            padding: 30px; border-radius: 16px; width: 400px; text-align: center;
+            background: linear-gradient(165deg, var(--deck-2), var(--deck) 70%); border: 1px solid var(--edge);
+            padding: 30px; border-radius: 18px; width: 400px; text-align: center;
+            box-shadow: 0 30px 60px -20px rgba(0,0,0,.8);
         }
-        .modal-content h3 { margin-bottom: 10px; color: white; }
-        .modal-content p { color: var(--text-secondary); margin-bottom: 24px; font-size: 0.9rem; }
-        .modal-btns { display: flex; gap: 16px; }
-        .modal-btns button { flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; }
-        .btn-cancel { background: rgba(255,255,255,0.1); color: white; }
-        .btn-confirm { background: var(--rose); color: white; }
+        .modal-content h3 { margin-bottom: 10px; color: white; font-family: var(--font-display); }
+        .modal-content p { color: var(--mist); margin-bottom: 24px; font-size: .88rem; }
+        .modal-btns { display: flex; gap: 14px; }
+        .modal-btns button {
+            flex: 1; padding: 11px; border-radius: 9px; border: none; font-weight: 600; cursor: pointer;
+            font-family: var(--font-body);
+        }
+        .btn-cancel { background: rgba(255,255,255,.08); color: white; }
+        .btn-confirm { background: var(--coral); color: white; }
 
-        /* Toast */
-        #toast { position: fixed; top: 24px; right: 24px; z-index: 1000; display: none; align-items: center; gap: 12px; padding: 16px 24px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; background: rgba(15, 10, 30, 0.95); border: 1px solid var(--glass-border); color: var(--text-primary); }
+        /* ---------- Toast ---------- */
+        #toast {
+            position: fixed; top: 22px; right: 22px; z-index: 1000; display: none; align-items: center; gap: 12px;
+            padding: 15px 22px; border-radius: 12px; font-size: .84rem; font-weight: 600;
+            background: rgba(12,16,26,.96); border: 1px solid var(--edge); color: var(--white);
+            box-shadow: 0 18px 40px -14px rgba(0,0,0,.7);
+        }
         #toast.visible { display: flex; }
-        #toast.success-toast { border-left: 4px solid var(--emerald); }
-        #toast.error-toast { border-left: 4px solid var(--rose); }
+        #toast.success-toast { border-left: 4px solid var(--mint); }
+        #toast.error-toast { border-left: 4px solid var(--coral); }
 
         .hidden { display: none !important; }
+
+        @media (max-width: 1000px) {
+            .workspace { grid-template-columns: 1fr; height: auto; overflow-y: auto; }
+            .controls-col, .data-col { height: auto; overflow-y: visible; }
+            body { overflow-y: auto; height: auto; }
+            header { flex-wrap: wrap; gap: 14px; padding: 16px 20px; }
+            .workspace { padding: 20px; }
+        }
     </style>
 </head>
 <body>
+
+    <div class="grid-floor"></div>
+    <div class="horizon-glow"></div>
 
     <!-- HIDDEN AUDIO PLAYER FOR CLOUD DEPLOYMENT -->
     <audio id="sysAudioPlayer" class="hidden"></audio>
@@ -194,30 +401,38 @@
 
     <header>
         <div class="brand">
-            <div class="logo-icon">KG</div>
+            <div class="beacon-3d" id="beaconIcon">
+                <div class="beacon-stage">
+                    <div class="beacon-ring r3"></div>
+                    <div class="beacon-ring r2"></div>
+                    <div class="beacon-ring r1"></div>
+                    <div class="beacon-core">KG</div>
+                </div>
+            </div>
             <div class="brand-text">
                 <h1>{{ college_name | default('Kanchan Girls Inter College') }}</h1>
-                <h2>{{ college_short | default('KGIC') }} Control Center</h2>
+                <h2>{{ college_short | default('KGIC') }} · PA CONTROL TOWER</h2>
             </div>
         </div>
         <div class="system-stats">
-            <div class="clock-container">
-                <div class="clock-time" id="liveTime">00:00:00</div>
-                <div class="clock-date" id="liveDate">LOADING...</div>
+            <div class="clock-module">
+                <div class="clock-digits" id="liveTime">00:00:00</div>
+                <div class="clock-caption" id="liveDate">LOADING...</div>
             </div>
-            <!-- INTERACTIVE START ENGINE BUTTON -->
-            <button id="engineToggleBtn" class="engine-btn" onclick="toggleAudioEngine()">
-                <span class="pulse-dot"></span> 🎙️ Start Audio Engine
+            <button id="engineToggleBtn" class="power-switch" onclick="toggleAudioEngine()" type="button">
+                <span class="power-track"><span class="power-knob"></span></span>
+                <span class="power-label" id="engineLabel">Engine Standby</span>
             </button>
         </div>
     </header>
 
     <div class="workspace">
-        
+
         <!-- LEFT COLUMN -->
         <div class="controls-col">
-            
-            <div class="glass-panel panel-crimson" style="margin-bottom: 24px;">
+
+            <div class="panel-3d accent-coral tilt-card" style="margin-bottom: 24px;">
+                <span class="panel-eyebrow">Live Override</span>
                 <h3 class="panel-header">📢 Instant Manual Broadcast</h3>
                 <form id="speakNowForm">
                     <div class="grid-row-2 form-group">
@@ -229,7 +444,6 @@
                                 <option value="en">English Only</option>
                             </select>
                         </div>
-                        <!-- NAYA: Loop Count for Emergency -->
                         <div>
                             <label>Loop Count</label>
                             <select name="repeat_count">
@@ -248,16 +462,16 @@
                         <label>Hindi Text</label>
                         <textarea name="text_hi"></textarea>
                     </div>
-                    <button type="submit" id="sn_submit_btn" class="btn btn-crimson">Broadcast Live Alert Now</button>
+                    <button type="submit" id="sn_submit_btn" class="btn-3d coral">Broadcast Live Alert Now</button>
                 </form>
             </div>
 
             <!-- Enhanced Automation Form -->
-            <div class="glass-panel panel-violet">
+            <div class="panel-3d accent-cyan tilt-card">
+                <span class="panel-eyebrow">Scheduled Ops</span>
                 <h3 class="panel-header" id="formTitle">🗓️ Create Automation Timeline</h3>
-                
+
                 <form action="/api/schedules" method="POST" id="automationForm">
-                    <!-- Hidden ID for Editing mode -->
                     <input type="hidden" name="schedule_id" id="edit_id" value="">
 
                     <div class="form-group">
@@ -268,9 +482,10 @@
                     <div class="form-group">
                         <label>Trigger Execution Mode</label>
                         <div class="toggle-group">
+                            <div class="toggle-thumb"></div>
                             <input type="radio" id="type_daily" name="announcement_type" value="daily" checked onchange="syncLayoutDateState()">
                             <label for="type_daily">🔄 Daily</label>
-                            
+
                             <input type="radio" id="type_weekly" name="announcement_type" value="weekly" onchange="syncLayoutDateState()">
                             <label for="type_weekly">📅 Weekly</label>
 
@@ -284,14 +499,12 @@
                             <label>Time Slot (24h)</label>
                             <input type="time" name="schedule_time" id="sch_time" required>
                         </div>
-                        
-                        <!-- Shows only for One-Time -->
+
                         <div id="sch_date_block" class="hidden">
                             <label>Target Date</label>
                             <input type="date" name="schedule_date" id="sch_date">
                         </div>
 
-                        <!-- Shows only for Weekly -->
                         <div id="sch_day_block" class="hidden">
                             <label>Day of Week</label>
                             <select name="schedule_day" id="sch_day">
@@ -335,17 +548,18 @@
                         <textarea name="text_hi" id="sch_text_hi"></textarea>
                     </div>
 
-                    <button type="submit" class="btn btn-violet" id="automationSubmitBtn">Deploy Automation Node</button>
-                    <!-- Cancel Edit Button -->
-                    <button type="button" class="btn hidden" id="cancelEditBtn" onclick="resetEditMode()" style="background: rgba(255,255,255,0.1); margin-top: 10px;">Cancel Editing</button>
+                    <button type="submit" class="btn-3d cyan" id="automationSubmitBtn">Deploy Automation Node</button>
+                    <button type="button" class="btn-3d ghost hidden" id="cancelEditBtn" onclick="resetEditMode()">Cancel Editing</button>
                 </form>
             </div>
         </div>
 
         <!-- RIGHT COLUMN -->
         <div class="data-col">
-            <div class="glass-panel" style="margin-bottom: 24px;">
+            <div class="panel-3d tilt-card" style="margin-bottom: 24px;">
+                <span class="panel-eyebrow">Departure Board</span>
                 <h3 class="panel-header">📋 Active Automated Sound Timelines</h3>
+                <div class="board-wrap">
                 <table>
                     <thead>
                         <tr>
@@ -360,52 +574,54 @@
                         <tr class="{% if not s.is_active %}row-muted{% endif %}">
                             <td>
                                 <strong>{{ s.schedule_time }}</strong><br>
-                                <span style="font-size: 0.75rem; color: var(--text-secondary);">
+                                <span style="font-size: 0.75rem; color: var(--mist-dim);">
                                     {% if s.announcement_type == 'daily' %}🔄 Daily
                                     {% elif s.announcement_type == 'weekly' %}📅 Every {{ s.schedule_day }}
                                     {% else %}🎯 {{ s.schedule_date }}{% endif %}
                                 </span>
                             </td>
                             <td>
-                                <strong>{{ s.title }}</strong><br>
-                                <span style="font-size: 0.75rem; color: var(--text-secondary);">Lang: {{ s.language | upper }}</span>
+                                <strong style="font-family: var(--font-body);">{{ s.title }}</strong><br>
+                                <span style="font-size: 0.75rem; color: var(--mist-dim);">Lang: {{ s.language | upper }}</span>
                             </td>
                             <td>
-                                <button class="action-btn" onclick="dispatchToggleCallback('{{ s.id }}')">
+                                <button class="chip-btn {% if s.is_active %}status-on{% else %}status-off{% endif %}" onclick="dispatchToggleCallback('{{ s.id }}')">
                                     {% if s.is_active %}Active{% else %}Muted{% endif %}
                                 </button>
                             </td>
                             <td>
-                                <!-- Safe Data Attributes for Edit Parsing -->
-                                <button class="action-btn edit" 
-                                    data-id="{{ s.id }}" data-title="{{ s.title }}" data-type="{{ s.announcement_type }}" 
-                                    data-time="{{ s.schedule_time }}" data-date="{{ s.schedule_date or '' }}" data-day="{{ s.schedule_day or 'Monday' }}" 
-                                    data-lang="{{ s.language }}" data-rep="{{ s.repeat_count }}" 
+                                <button class="chip-btn edit"
+                                    data-id="{{ s.id }}" data-title="{{ s.title }}" data-type="{{ s.announcement_type }}"
+                                    data-time="{{ s.schedule_time }}" data-date="{{ s.schedule_date or '' }}" data-day="{{ s.schedule_day or 'Monday' }}"
+                                    data-lang="{{ s.language }}" data-rep="{{ s.repeat_count }}"
                                     data-texten="{{ s.text_en or '' }}" data-texthi="{{ s.text_hi or '' }}"
                                     onclick="enableEditMode(this)">Edit</button>
-                                
-                                <button class="action-btn" onclick="dispatchAudioTestCallback('{{ s.id }}')">Test</button>
-                                <button class="action-btn del" onclick="openDeleteModal('{{ s.id }}')">Delete</button>
+
+                                <button class="chip-btn" onclick="dispatchAudioTestCallback('{{ s.id }}')">Test</button>
+                                <button class="chip-btn del" onclick="openDeleteModal('{{ s.id }}')">Delete</button>
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
+                </div>
             </div>
 
-            <div class="glass-panel">
-                <!-- NAYA: Button add kiya -->
+            <div class="panel-3d console-panel">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h3 class="panel-header" style="margin-bottom: 0;">📜 Real-Time System Stream Logs</h3>
-                    <button class="action-btn del" onclick="clearSystemLogs()">🗑️ Clear Logs</button>
+                    <div>
+                        <span class="panel-eyebrow">Black Box Recorder</span>
+                        <h3 class="panel-header" style="margin-bottom: 0;">📜 Real-Time System Stream Logs</h3>
+                    </div>
+                    <button class="chip-btn del" onclick="clearSystemLogs()">🗑️ Clear Logs</button>
                 </div>
                 <div class="terminal-box">
                     {% for l in logs %}
                     <div class="log-line">
                         <span class="log-time">[{{ l.triggered_at }}]</span>
-                        <span style="color: {% if l.trigger_type == 'manual' %}var(--magenta-main){% else %}var(--violet-main){% endif %};">[{{ l.trigger_type[:3].upper() }}]</span>
+                        <span style="color: {% if l.trigger_type == 'manual' %}var(--coral){% else %}var(--cyan){% endif %};">[{{ l.trigger_type[:3].upper() }}]</span>
                         <span style="flex:1; color:#e2e8f0;">{{ l.title }}</span>
-                        <span style="color: {% if l.status == 'success' %}var(--emerald){% else %}var(--rose){% endif %};">• {{ l.status.upper() }}</span>
+                        <span style="color: {% if l.status == 'success' %}var(--mint){% else %}var(--coral){% endif %};">• {{ l.status.upper() }}</span>
                     </div>
                     {% endfor %}
                 </div>
@@ -421,7 +637,7 @@
             document.getElementById('liveDate').innerText = current.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }).toUpperCase();
         }, 1000);
 
-        // --- 2. CLOUD AUDIO ENGINE LOGIC (NEW) ---
+        // --- 2. CLOUD AUDIO ENGINE LOGIC ---
         let engineActive = false;
         let isPlaying = false;
         let pollInterval = null;
@@ -429,32 +645,34 @@
         function toggleAudioEngine() {
             engineActive = !engineActive;
             const btn = document.getElementById('engineToggleBtn');
-            
+            const label = document.getElementById('engineLabel');
+            const beacon = document.getElementById('beaconIcon');
+
             if (engineActive) {
-                // Unlock audio context (Required by browsers)
                 document.getElementById('sysAudioPlayer').play().catch(e => {});
-                
-                btn.innerHTML = '<span class="pulse-dot"></span> 🟢 Engine Listening...';
+
                 btn.classList.add('online');
+                label.innerText = 'Engine Listening…';
+                beacon.classList.add('live');
                 renderToastPopup("Cloud Audio Engine Started! Monitoring for broadcasts...");
-                
-                // Start polling every 5 seconds
+
                 pollInterval = setInterval(checkCloudForAudio, 5000);
             } else {
-                btn.innerHTML = '<span class="pulse-dot"></span> 🎙️ Start Audio Engine';
                 btn.classList.remove('online');
+                label.innerText = 'Engine Standby';
+                beacon.classList.remove('live');
                 clearInterval(pollInterval);
                 renderToastPopup("Cloud Audio Engine Stopped.", false);
             }
         }
 
         async function checkCloudForAudio() {
-            if (isPlaying) return; // Do not interrupt current playback
+            if (isPlaying) return;
 
             try {
                 const res = await fetch('/api/get_pending_audio');
                 const data = await res.json();
-                
+
                 if (data.has_audio) {
                     playAudioSequence(data.files, data.repeat_count, data.task_id);
                 }
@@ -465,27 +683,29 @@
 
         async function playAudioSequence(files, repeatCount, taskId) {
             isPlaying = true;
+            document.getElementById('beaconIcon').classList.add('broadcasting');
             const player = document.getElementById('sysAudioPlayer');
-            
+
             for (let r = 0; r < repeatCount; r++) {
                 for (let i = 0; i < files.length; i++) {
                     await new Promise((resolve) => {
                         player.src = files[i];
                         player.onended = resolve;
-                        player.onerror = resolve; 
+                        player.onerror = resolve;
                         player.play();
                     });
                     await new Promise(res => setTimeout(res, 2000));
                 }
             }
-            
+
             await fetch('/api/mark_audio_done', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ task_id: taskId })
             });
-            
+
             isPlaying = false;
+            document.getElementById('beaconIcon').classList.remove('broadcasting');
             refreshLogs();
         }
 
@@ -496,8 +716,8 @@
                 const terminal = document.querySelector('.terminal-box');
                 terminal.innerHTML = '';
                 logs.forEach(l => {
-                    const colorType = l.trigger_type === 'manual' ? 'var(--magenta-main)' : 'var(--violet-main)';
-                    const colorStat = l.status === 'success' ? 'var(--emerald)' : 'var(--rose)';
+                    const colorType = l.trigger_type === 'manual' ? 'var(--coral)' : 'var(--cyan)';
+                    const colorStat = l.status === 'success' ? 'var(--mint)' : 'var(--coral)';
                     terminal.innerHTML += `
                     <div class="log-line">
                         <span class="log-time">[${l.triggered_at}]</span>
@@ -536,7 +756,7 @@
             document.getElementById('formTitle').innerText = "✏️ Edit Automation Timeline";
             document.getElementById('automationSubmitBtn').innerText = "Update Automation Node";
             document.getElementById('cancelEditBtn').classList.remove('hidden');
-            
+
             document.getElementById('edit_id').value = data.id;
             document.getElementById('sch_title').value = data.title;
             document.getElementById('sch_time').value = data.time;
@@ -549,6 +769,7 @@
             document.querySelector(`input[name="announcement_type"][value="${data.type}"]`).checked = true;
             syncLayoutDateState();
             syncTextareaViews('sch_language', 'sch_en_box', 'sch_hi_box');
+            document.getElementById('sch_title').scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
         function resetEditMode() {
@@ -586,13 +807,13 @@
             e.preventDefault();
             const btn = document.getElementById('sn_submit_btn');
             btn.disabled = true; btn.innerText = "Transmitting to Cloud...";
-            
+
             fetch('/api/speak_now', { method: 'POST', body: new FormData(this) })
             .then(res => res.json()).then(payload => {
                 btn.disabled = false; btn.innerText = "Broadcast Live Alert Now";
                 if (payload.error) renderToastPopup(payload.error, false);
-                else { 
-                    renderToastPopup("Emergency payload pushed! Monitoring engine will play it."); 
+                else {
+                    renderToastPopup("Emergency payload pushed! Monitoring engine will play it.");
                     this.reset();
                 }
             });
@@ -608,12 +829,6 @@
             .then(res => res.json()).then(p => p.success ? renderToastPopup("Test queued. Make sure Engine is Online to hear it.") : renderToastPopup(p.error, false));
         }
 
-        window.onload = function() {
-            syncLayoutDateState();
-            syncTextareaViews('sn_language', 'sn_en_box', 'sn_hi_box');
-            syncTextareaViews('sch_language', 'sch_en_box', 'sch_hi_box');
-        };
-        // NAYA: Clear Logs Function
         function clearSystemLogs() {
             if (confirm("Are you sure you want to clear all system logs?")) {
                 fetch('/api/logs/clear', { method: 'POST' })
@@ -621,11 +836,40 @@
                 .then(payload => {
                     if (payload.success) {
                         renderToastPopup(payload.message, true);
-                        refreshLogs(); // Box ko khali kar dega
+                        refreshLogs();
                     }
                 });
             }
         }
+
+        // --- 6. 3D TILT INTERACTION (desktop pointer only, respects reduced-motion) ---
+        function initTilt() {
+            const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (!canHover || reduceMotion) return;
+
+            const maxTilt = 4.5;
+            document.querySelectorAll('.tilt-card').forEach(card => {
+                card.addEventListener('mousemove', e => {
+                    const r = card.getBoundingClientRect();
+                    const px = (e.clientX - r.left) / r.width;
+                    const py = (e.clientY - r.top) / r.height;
+                    const rx = (0.5 - py) * maxTilt * 2;
+                    const ry = (px - 0.5) * maxTilt * 2;
+                    card.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg) translateZ(4px)`;
+                });
+                card.addEventListener('mouseleave', () => {
+                    card.style.transform = 'rotateX(0deg) rotateY(0deg) translateZ(0px)';
+                });
+            });
+        }
+
+        window.onload = function() {
+            syncLayoutDateState();
+            syncTextareaViews('sn_language', 'sn_en_box', 'sn_hi_box');
+            syncTextareaViews('sch_language', 'sch_en_box', 'sch_hi_box');
+            initTilt();
+        };
     </script>
 </body>
 </html>
