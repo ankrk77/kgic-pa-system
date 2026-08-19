@@ -1,8 +1,9 @@
+import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
 # YAHAN APNA COPIED URL PASTE KAREIN (Quotes "" ke andar)
-DATABASE_URL = "postgresql://neondb_owner:npg_qw97TkjUeLVz@ep-wandering-surf-ay3bm6qd-pooler.c-5.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 def get_connection():
     # Connect to Neon PostgreSQL
