@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ college_short }} | PA Control Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0b0716;
+            --violet-main: #8b5cf6;
+            --violet-glow: rgba(139, 92, 246, 0.4);
+            --indigo-main: #4f46e5;
+            --magenta-main: #d946ef;
+            --crimson-main: #e11d48;
+            --crimson-glow: rgba(225, 29, 72, 0.4);
+            --emerald: #10b981;
+            --rose: #f43f5e;
+            --glass-bg: rgba(30, 25, 45, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        /* Independent Scrolling Setup */
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 15% 10%, rgba(139, 92, 246, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 85% 90%, rgba(217, 70, 239, 0.1) 0%, transparent 40%);
+            color: var(--text-primary);
+            font-family: 'Poppins', sans-serif;
+            height: 100vh; /* Fixed height for body */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Stop whole page scroll */
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px 40px; border-bottom: 1px solid var(--glass-border);
+            background: rgba(11, 7, 22, 0.8); backdrop-filter: blur(20px); z-index: 10;
+            flex-shrink: 0; /* Prevent header from shrinking */
+        }
+
+        .brand { display: flex; align-items: center; gap: 16px; }
+        .logo-icon {
+            width: 48px; height: 48px; border-radius: 12px;
+            background: linear-gradient(135deg, var(--violet-main), var(--magenta-main));
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 1.2rem; color: white;
+        }
+        .brand-text h1 { font-size: 1.4rem; font-weight: 700; background: linear-gradient(to right, #e2e8f0, #a5b4fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .brand-text h2 { font-size: 0.85rem; color: var(--text-secondary); }
+        
+        .system-stats { display: flex; align-items: center; gap: 24px; }
+        .clock-time { font-family: 'Fira Code', monospace; font-size: 1.2rem; font-weight: 600; color: #fff; }
+        .clock-date { font-family: 'Fira Code', monospace; font-size: 0.75rem; color: var(--violet-main); text-align: right;}
+        
+        /* Interactive Engine Button Styling */
+        .engine-btn {
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3);
+            padding: 10px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; color: var(--rose);
+            cursor: pointer; transition: all 0.3s;
+        }
+        .engine-btn:hover { background: rgba(244, 63, 94, 0.2); }
+        .engine-btn.online {
+            background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3); color: var(--emerald);
+        }
+        .engine-btn.online:hover { background: rgba(16, 185, 129, 0.2); }
+        
+        .pulse-dot { width: 8px; height: 8px; background: var(--rose); border-radius: 50%; box-shadow: 0 0 10px var(--rose); }
+        .engine-btn.online .pulse-dot { background: var(--emerald); box-shadow: 0 0 10px var(--emerald); animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); } 70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+
+        /* Scrollable Workspace */
+        .workspace { 
+            display: grid; 
+            grid-template-columns: 430px 1fr; 
+            gap: 32px; 
+            padding: 24px 40px; 
+            height: calc(100vh - 90px); 
+        }
+        
+        /* Individual Scrollbars for columns */
+        .controls-col, .data-col { 
+            overflow-y: auto; 
+            padding-right: 10px; 
+            height: 100%; 
+            padding-bottom: 40px; 
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+        ::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.3); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(139, 92, 246, 0.6); }
+
+        .panel-header { font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 6px; font-weight: 500; text-transform: uppercase; }
+        input[type="text"], input[type="time"], input[type="date"], select, textarea {
+            width: 100%; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px; padding: 12px 14px; color: var(--text-primary); font-family: 'Poppins', sans-serif; font-size: 0.9rem;
+        }
+        input:focus, select:focus, textarea:focus { border-color: var(--violet-main); outline: none; }
+        textarea { resize: vertical; min-height: 80px; }
+        .grid-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+        .panel-crimson { border-top: 3px solid var(--crimson-main); }
+        .panel-violet { border-top: 3px solid var(--violet-main); }
+
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; font-family: 'Poppins', sans-serif; font-weight: 600; cursor: pointer; color: white; transition: all 0.3s ease; }
+        .btn-crimson { background: linear-gradient(135deg, var(--crimson-main), #be123c); box-shadow: 0 4px 15px var(--crimson-glow); }
+        .btn-violet { background: linear-gradient(135deg, var(--violet-main), var(--indigo-main)); box-shadow: 0 4px 15px var(--violet-glow); }
+        
+        /* Updated Toggle Group for 3 options */
+        .toggle-group { display: flex; background: rgba(0,0,0,0.4); border-radius: 8px; padding: 4px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 16px; }
+        .toggle-group label { flex: 1; text-align: center; padding: 8px 4px; cursor: pointer; border-radius: 6px; font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); }
+        .toggle-group input[type="radio"] { display: none; }
+        .toggle-group input[type="radio"]:checked + label { background: var(--violet-main); color: white; }
+
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { background: rgba(0,0,0,0.2); padding: 14px; font-size: 0.8rem; color: var(--text-secondary); border-bottom: 1px solid var(--glass-border); }
+        td { padding: 16px 14px; border-bottom: 1px solid rgba(255,255,255,0.03); vertical-align: middle; }
+        .row-muted { opacity: 0.4; filter: grayscale(0.5); }
+        
+        .action-btn { background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border); color: var(--text-primary); padding: 6px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; }
+        .action-btn:hover { background: rgba(255,255,255,0.15); }
+        .action-btn.del { color: #fda4af; border-color: rgba(244,63,94,0.3); }
+        .action-btn.edit { color: #a7f3d0; border-color: rgba(16,185,129,0.3); }
+
+        .terminal-box { background: rgba(5, 3, 10, 0.85); border-radius: 12px; padding: 16px; font-family: 'Fira Code', monospace; font-size: 0.75rem; display: grid; gap: 10px; }
+        .log-line { display: flex; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.02); padding-bottom: 6px; }
+        .log-time { color: var(--text-secondary); }
+        
+        /* Custom Delete Modal */
+        #customModal {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px);
+            display: none; align-items: center; justify-content: center; z-index: 9999;
+        }
+        .modal-content {
+            background: var(--glass-bg); border: 1px solid var(--glass-border);
+            padding: 30px; border-radius: 16px; width: 400px; text-align: center;
+        }
+        .modal-content h3 { margin-bottom: 10px; color: white; }
+        .modal-content p { color: var(--text-secondary); margin-bottom: 24px; font-size: 0.9rem; }
+        .modal-btns { display: flex; gap: 16px; }
+        .modal-btns button { flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; }
+        .btn-cancel { background: rgba(255,255,255,0.1); color: white; }
+        .btn-confirm { background: var(--rose); color: white; }
+
+        /* Toast */
+        #toast { position: fixed; top: 24px; right: 24px; z-index: 1000; display: none; align-items: center; gap: 12px; padding: 16px 24px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; background: rgba(15, 10, 30, 0.95); border: 1px solid var(--glass-border); color: var(--text-primary); }
+        #toast.visible { display: flex; }
+        #toast.success-toast { border-left: 4px solid var(--emerald); }
+        #toast.error-toast { border-left: 4px solid var(--rose); }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <!-- HIDDEN AUDIO PLAYER FOR CLOUD DEPLOYMENT -->
+    <audio id="sysAudioPlayer" class="hidden"></audio>
+
+    <div id="customModal">
+        <div class="modal-content">
+            <h3>⚠️ Confirm Deletion</h3>
+            <p>Are you sure you want to permanently delete this announcement routine? This cannot be undone.</p>
+            <div class="modal-btns">
+                <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="btn-confirm" id="confirmDeleteBtn">Yes, Delete It</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast"><span id="toastMessage"></span></div>
+
+    <header>
+        <div class="brand">
+            <div class="logo-icon">KG</div>
+            <div class="brand-text">
+                <h1>{{ college_name | default('Kanchan Girls Inter College') }}</h1>
+                <h2>{{ college_short | default('KGIC') }} Control Center</h2>
+            </div>
+        </div>
+        <div class="system-stats">
+            <div class="clock-container">
+                <div class="clock-time" id="liveTime">00:00:00</div>
+                <div class="clock-date" id="liveDate">LOADING...</div>
+            </div>
+            <!-- INTERACTIVE START ENGINE BUTTON -->
+            <button id="engineToggleBtn" class="engine-btn" onclick="toggleAudioEngine()">
+                <span class="pulse-dot"></span> 🎙️ Start Audio Engine
+            </button>
+        </div>
+    </header>
+
+    <div class="workspace">
+        
+        <!-- LEFT COLUMN -->
+        <div class="controls-col">
+            
+            <div class="glass-panel panel-crimson" style="margin-bottom: 24px;">
+                <h3 class="panel-header">📢 Instant Manual Broadcast</h3>
+                <form id="speakNowForm">
+                    <div class="grid-row-2 form-group">
+                        <div>
+                            <label>Language Format</label>
+                            <select id="sn_language" name="language" onchange="syncTextareaViews('sn_language', 'sn_en_box', 'sn_hi_box')">
+                                <option value="both">Both (Hindi + English)</option>
+                                <option value="hi">Hindi Only</option>
+                                <option value="en">English Only</option>
+                            </select>
+                        </div>
+                        <!-- NAYA: Loop Count for Emergency -->
+                        <div>
+                            <label>Loop Count</label>
+                            <select name="repeat_count">
+                                <option value="1">1x Loop Run</option>
+                                <option value="2">Repeat 2 Times</option>
+                                <option value="3">Repeat 3 Times</option>
+                                <option value="5">Repeat 5 Times (Emergency)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group" id="sn_en_box">
+                        <label>English Text</label>
+                        <textarea name="text_en"></textarea>
+                    </div>
+                    <div class="form-group" id="sn_hi_box">
+                        <label>Hindi Text</label>
+                        <textarea name="text_hi"></textarea>
+                    </div>
+                    <button type="submit" id="sn_submit_btn" class="btn btn-crimson">Broadcast Live Alert Now</button>
+                </form>
+            </div>
+
+            <!-- Enhanced Automation Form -->
+            <div class="glass-panel panel-violet">
+                <h3 class="panel-header" id="formTitle">🗓️ Create Automation Timeline</h3>
+                
+                <form action="/api/schedules" method="POST" id="automationForm">
+                    <!-- Hidden ID for Editing mode -->
+                    <input type="hidden" name="schedule_id" id="edit_id" value="">
+
+                    <div class="form-group">
+                        <label>Objective Title</label>
+                        <input type="text" name="title" id="sch_title" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Trigger Execution Mode</label>
+                        <div class="toggle-group">
+                            <input type="radio" id="type_daily" name="announcement_type" value="daily" checked onchange="syncLayoutDateState()">
+                            <label for="type_daily">🔄 Daily</label>
+                            
+                            <input type="radio" id="type_weekly" name="announcement_type" value="weekly" onchange="syncLayoutDateState()">
+                            <label for="type_weekly">📅 Weekly</label>
+
+                            <input type="radio" id="type_onetime" name="announcement_type" value="onetime" onchange="syncLayoutDateState()">
+                            <label for="type_onetime">🎯 One-Time</label>
+                        </div>
+                    </div>
+
+                    <div class="grid-row-2 form-group">
+                        <div>
+                            <label>Time Slot (24h)</label>
+                            <input type="time" name="schedule_time" id="sch_time" required>
+                        </div>
+                        
+                        <!-- Shows only for One-Time -->
+                        <div id="sch_date_block" class="hidden">
+                            <label>Target Date</label>
+                            <input type="date" name="schedule_date" id="sch_date">
+                        </div>
+
+                        <!-- Shows only for Weekly -->
+                        <div id="sch_day_block" class="hidden">
+                            <label>Day of Week</label>
+                            <select name="schedule_day" id="sch_day">
+                                <option value="Monday">Monday</option>
+                                <option value="Tuesday">Tuesday</option>
+                                <option value="Wednesday">Wednesday</option>
+                                <option value="Thursday">Thursday</option>
+                                <option value="Friday">Friday</option>
+                                <option value="Saturday">Saturday</option>
+                                <option value="Sunday">Sunday</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid-row-2 form-group">
+                        <div>
+                            <label>Language Output</label>
+                            <select id="sch_language" name="language" onchange="syncTextareaViews('sch_language', 'sch_en_box', 'sch_hi_box')">
+                                <option value="both">Both (Hinglish)</option>
+                                <option value="hi">Hindi Only</option>
+                                <option value="en">English Only</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Loop Count</label>
+                            <select name="repeat_count" id="sch_rep">
+                                <option value="1">1x Loop Run</option>
+                                <option value="2">Repeat 2 Times</option>
+                                <option value="3">Repeat 3 Times</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="sch_en_box">
+                        <label>English Speech Text</label>
+                        <textarea name="text_en" id="sch_text_en"></textarea>
+                    </div>
+
+                    <div class="form-group" id="sch_hi_box">
+                        <label>Hindi Speech Text (हिंदी)</label>
+                        <textarea name="text_hi" id="sch_text_hi"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-violet" id="automationSubmitBtn">Deploy Automation Node</button>
+                    <!-- Cancel Edit Button -->
+                    <button type="button" class="btn hidden" id="cancelEditBtn" onclick="resetEditMode()" style="background: rgba(255,255,255,0.1); margin-top: 10px;">Cancel Editing</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN -->
+        <div class="data-col">
+            <div class="glass-panel" style="margin-bottom: 24px;">
+                <h3 class="panel-header">📋 Active Automated Sound Timelines</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Schedule</th>
+                            <th>Details</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in schedules %}
+                        <tr class="{% if not s.is_active %}row-muted{% endif %}">
+                            <td>
+                                <strong>{{ s.schedule_time }}</strong><br>
+                                <span style="font-size: 0.75rem; color: var(--text-secondary);">
+                                    {% if s.announcement_type == 'daily' %}🔄 Daily
+                                    {% elif s.announcement_type == 'weekly' %}📅 Every {{ s.schedule_day }}
+                                    {% else %}🎯 {{ s.schedule_date }}{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <strong>{{ s.title }}</strong><br>
+                                <span style="font-size: 0.75rem; color: var(--text-secondary);">Lang: {{ s.language | upper }}</span>
+                            </td>
+                            <td>
+                                <button class="action-btn" onclick="dispatchToggleCallback('{{ s.id }}')">
+                                    {% if s.is_active %}Active{% else %}Muted{% endif %}
+                                </button>
+                            </td>
+                            <td>
+                                <!-- Safe Data Attributes for Edit Parsing -->
+                                <button class="action-btn edit" 
+                                    data-id="{{ s.id }}" data-title="{{ s.title }}" data-type="{{ s.announcement_type }}" 
+                                    data-time="{{ s.schedule_time }}" data-date="{{ s.schedule_date or '' }}" data-day="{{ s.schedule_day or 'Monday' }}" 
+                                    data-lang="{{ s.language }}" data-rep="{{ s.repeat_count }}" 
+                                    data-texten="{{ s.text_en or '' }}" data-texthi="{{ s.text_hi or '' }}"
+                                    onclick="enableEditMode(this)">Edit</button>
+                                
+                                <button class="action-btn" onclick="dispatchAudioTestCallback('{{ s.id }}')">Test</button>
+                                <button class="action-btn del" onclick="openDeleteModal('{{ s.id }}')">Delete</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="glass-panel">
+                <!-- NAYA: Button add kiya -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 class="panel-header" style="margin-bottom: 0;">📜 Real-Time System Stream Logs</h3>
+                    <button class="action-btn del" onclick="clearSystemLogs()">🗑️ Clear Logs</button>
+                </div>
+                <div class="terminal-box">
+                    {% for l in logs %}
+                    <div class="log-line">
+                        <span class="log-time">[{{ l.triggered_at }}]</span>
+                        <span style="color: {% if l.trigger_type == 'manual' %}var(--magenta-main){% else %}var(--violet-main){% endif %};">[{{ l.trigger_type[:3].upper() }}]</span>
+                        <span style="flex:1; color:#e2e8f0;">{{ l.title }}</span>
+                        <span style="color: {% if l.status == 'success' %}var(--emerald){% else %}var(--rose){% endif %};">• {{ l.status.upper() }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. CLOCK ---
+        setInterval(() => {
+            const current = new Date();
+            document.getElementById('liveTime').innerText = current.toTimeString().split(' ')[0];
+            document.getElementById('liveDate').innerText = current.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }).toUpperCase();
+        }, 1000);
+
+        // --- 2. CLOUD AUDIO ENGINE LOGIC (NEW) ---
+        let engineActive = false;
+        let isPlaying = false;
+        let pollInterval = null;
+
+        function toggleAudioEngine() {
+            engineActive = !engineActive;
+            const btn = document.getElementById('engineToggleBtn');
+            
+            if (engineActive) {
+                // Unlock audio context (Required by browsers)
+                document.getElementById('sysAudioPlayer').play().catch(e => {});
+                
+                btn.innerHTML = '<span class="pulse-dot"></span> 🟢 Engine Listening...';
+                btn.classList.add('online');
+                renderToastPopup("Cloud Audio Engine Started! Monitoring for broadcasts...");
+                
+                // Start polling every 5 seconds
+                pollInterval = setInterval(checkCloudForAudio, 5000);
+            } else {
+                btn.innerHTML = '<span class="pulse-dot"></span> 🎙️ Start Audio Engine';
+                btn.classList.remove('online');
+                clearInterval(pollInterval);
+                renderToastPopup("Cloud Audio Engine Stopped.", false);
+            }
+        }
+
+        async function checkCloudForAudio() {
+            if (isPlaying) return; // Do not interrupt current playback
+
+            try {
+                const res = await fetch('/api/get_pending_audio');
+                const data = await res.json();
+                
+                if (data.has_audio) {
+                    playAudioSequence(data.files, data.repeat_count, data.task_id);
+                }
+            } catch (err) {
+                console.error("Polling error:", err);
+            }
+        }
+
+        async function playAudioSequence(files, repeatCount, taskId) {
+            isPlaying = true;
+            const player = document.getElementById('sysAudioPlayer');
+            
+            for (let r = 0; r < repeatCount; r++) {
+                for (let i = 0; i < files.length; i++) {
+                    await new Promise((resolve) => {
+                        player.src = files[i];
+                        player.onended = resolve;
+                        player.onerror = resolve; 
+                        player.play();
+                    });
+                    await new Promise(res => setTimeout(res, 2000));
+                }
+            }
+            
+            await fetch('/api/mark_audio_done', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ task_id: taskId })
+            });
+            
+            isPlaying = false;
+            refreshLogs();
+        }
+
+        async function refreshLogs() {
+            try {
+                const res = await fetch('/api/logs');
+                const logs = await res.json();
+                const terminal = document.querySelector('.terminal-box');
+                terminal.innerHTML = '';
+                logs.forEach(l => {
+                    const colorType = l.trigger_type === 'manual' ? 'var(--magenta-main)' : 'var(--violet-main)';
+                    const colorStat = l.status === 'success' ? 'var(--emerald)' : 'var(--rose)';
+                    terminal.innerHTML += `
+                    <div class="log-line">
+                        <span class="log-time">[${l.triggered_at}]</span>
+                        <span style="color: ${colorType};">[${l.trigger_type.substring(0,3).toUpperCase()}]</span>
+                        <span style="flex:1; color:#e2e8f0;">${l.title}</span>
+                        <span style="color: ${colorStat};">• ${l.status.toUpperCase()}</span>
+                    </div>`;
+                });
+            } catch(e) {}
+        }
+
+        // --- 3. UI TOGGLES & HELPERS ---
+        function syncLayoutDateState() {
+            const type = document.querySelector('input[name="announcement_type"]:checked').value;
+            document.getElementById('sch_date_block').className = type === 'onetime' ? '' : 'hidden';
+            document.getElementById('sch_day_block').className = type === 'weekly' ? '' : 'hidden';
+            document.getElementById('sch_date').required = (type === 'onetime');
+        }
+
+        function syncTextareaViews(selectId, enNodeId, hiNodeId) {
+            const val = document.getElementById(selectId).value;
+            document.getElementById(enNodeId).className = val !== 'hi' ? 'form-group' : 'hidden';
+            document.getElementById(hiNodeId).className = val !== 'en' ? 'form-group' : 'hidden';
+        }
+
+        function renderToastPopup(msg, success = true) {
+            const toast = document.getElementById('toast');
+            toast.className = success ? 'visible success-toast' : 'visible error-toast';
+            document.getElementById('toastMessage').innerText = msg;
+            setTimeout(() => toast.className = 'hidden', 3500);
+        }
+
+        // --- 4. EDIT & DELETE LOGIC ---
+        function enableEditMode(btn) {
+            const data = btn.dataset;
+            document.getElementById('formTitle').innerText = "✏️ Edit Automation Timeline";
+            document.getElementById('automationSubmitBtn').innerText = "Update Automation Node";
+            document.getElementById('cancelEditBtn').classList.remove('hidden');
+            
+            document.getElementById('edit_id').value = data.id;
+            document.getElementById('sch_title').value = data.title;
+            document.getElementById('sch_time').value = data.time;
+            document.getElementById('sch_date').value = data.date;
+            document.getElementById('sch_day').value = data.day;
+            document.getElementById('sch_language').value = data.lang;
+            document.getElementById('sch_rep').value = data.rep;
+            document.getElementById('sch_text_en').value = data.texten;
+            document.getElementById('sch_text_hi').value = data.texthi;
+            document.querySelector(`input[name="announcement_type"][value="${data.type}"]`).checked = true;
+            syncLayoutDateState();
+            syncTextareaViews('sch_language', 'sch_en_box', 'sch_hi_box');
+        }
+
+        function resetEditMode() {
+            document.getElementById('automationForm').reset();
+            document.getElementById('edit_id').value = "";
+            document.getElementById('formTitle').innerText = "🗓️ Create Automation Timeline";
+            document.getElementById('automationSubmitBtn').innerText = "Deploy Automation Node";
+            document.getElementById('cancelEditBtn').classList.add('hidden');
+            document.getElementById('type_daily').checked = true;
+            syncLayoutDateState();
+            syncTextareaViews('sch_language', 'sch_en_box', 'sch_hi_box');
+        }
+
+        let deleteTargetId = null;
+        function openDeleteModal(id) {
+            deleteTargetId = id;
+            document.getElementById('customModal').style.display = 'flex';
+        }
+        function closeModal() {
+            deleteTargetId = null;
+            document.getElementById('customModal').style.display = 'none';
+        }
+        document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+            if(!deleteTargetId) return;
+            fetch(`/api/schedules/${deleteTargetId}`, { method: 'DELETE' })
+            .then(res => res.json()).then(payload => {
+                if (payload.success) window.location.reload();
+                else renderToastPopup("Database row purging exception.", false);
+            });
+            closeModal();
+        });
+
+        // --- 5. BACKEND CALLS ---
+        document.getElementById('speakNowForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('sn_submit_btn');
+            btn.disabled = true; btn.innerText = "Transmitting to Cloud...";
+            
+            fetch('/api/speak_now', { method: 'POST', body: new FormData(this) })
+            .then(res => res.json()).then(payload => {
+                btn.disabled = false; btn.innerText = "Broadcast Live Alert Now";
+                if (payload.error) renderToastPopup(payload.error, false);
+                else { 
+                    renderToastPopup("Emergency payload pushed! Monitoring engine will play it."); 
+                    this.reset();
+                }
+            });
+        });
+
+        function dispatchToggleCallback(id) {
+            fetch(`/api/schedules/${id}/toggle`, { method: 'POST' })
+            .then(res => res.json()).then(p => p.success ? window.location.reload() : renderToastPopup(p.error, false));
+        }
+
+        function dispatchAudioTestCallback(id) {
+            fetch(`/api/schedules/${id}/test`, { method: 'POST' })
+            .then(res => res.json()).then(p => p.success ? renderToastPopup("Test queued. Make sure Engine is Online to hear it.") : renderToastPopup(p.error, false));
+        }
+
+        window.onload = function() {
+            syncLayoutDateState();
+            syncTextareaViews('sn_language', 'sn_en_box', 'sn_hi_box');
+            syncTextareaViews('sch_language', 'sch_en_box', 'sch_hi_box');
+        };
+        // NAYA: Clear Logs Function
+        function clearSystemLogs() {
+            if (confirm("Are you sure you want to clear all system logs?")) {
+                fetch('/api/logs/clear', { method: 'POST' })
+                .then(res => res.json())
+                .then(payload => {
+                    if (payload.success) {
+                        renderToastPopup(payload.message, true);
+                        refreshLogs(); // Box ko khali kar dega
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>
