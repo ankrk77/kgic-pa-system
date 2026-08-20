@@ -63,7 +63,7 @@ def login_required(view):
 
 
 database.init_db()
-scheduler = AnnouncementScheduler()
+scheduler = AnnouncementScheduler(pending_audio_queue, queue_lock)
 scheduler.start()
 
 

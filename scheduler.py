@@ -10,13 +10,16 @@ import tts_engine
 # checking every 10s (6x/minute) was wasted work against the DB. 20s still
 # guarantees we never miss a minute boundary, but cuts DB round-trips by
 # ~2x. Override with SCHEDULER_INTERVAL_SECONDS if you want it tighter.
-CHECK_INTERVAL = int(os.environ.get("SCHEDULER_INTERVAL_SECONDS", 20))
+CHECK_INTERVAL = int(os.environ.get("SCHEDULER_INTERVAL_SECONDS", 5))
 
 
 class AnnouncementScheduler:
-    def __init__(self):
+    def __init__(self, audio_queue=None, queue_lock=None):
         self._thread = None
         self._running = False
+        self.audio_queue = audio_queue
+        # YAHI LINE MISSING THI JISSE CRASH HUA 👇
+        self.queue_lock = queue_lock
 
     def start(self):
         if self._running: return
@@ -95,23 +98,39 @@ class AnnouncementScheduler:
         current_day = now.strftime('%A')
         minute_key = f"{current_date} {current_time}"
 
+        # 🟢 TESTING PRINT 1: Server ka actual time check karein
+        print(f"\n[TESTING - SCHEDULER] Woke up at Server Time: {current_time} | Day: {current_day} | Date: {current_date}")
+
         conn = database.get_connection()
         try:
             cur = conn.cursor()
             cur.execute("SELECT * FROM schedules WHERE is_active = 1 AND schedule_time = %s", (current_time,))
             due_rows = cur.fetchall()
+            
+            # 🟢 TESTING PRINT 2: Database se kitne schedule match hue
+            print(f"[TESTING - DB] Found {len(due_rows)} active schedule(s) matching exactly {current_time}")
         finally:
             conn.close()
 
         for row in due_rows:
-            if row['last_triggered'] == minute_key: continue
+            # 🟢 TESTING PRINT 3: Agar match mila, toh uski details
+            print(f"[TESTING - TRIGGER] Processing Schedule ID: {row['id']} | Title: '{row['title']}' | Type: {row['announcement_type']}")
+            
+            if row['last_triggered'] == minute_key:
+                print(f"[TESTING - SKIP] ID {row['id']} skipped. Already triggered in this minute ({minute_key}).")
+                continue
 
             if row['announcement_type'] == 'daily':
+                print(f"[TESTING - ACTION] Firing Daily Schedule ID {row['id']}")
                 self._trigger(row, minute_key, deactivate=False)
             elif row['announcement_type'] == 'onetime' and row['schedule_date'] == current_date:
+                print(f"[TESTING - ACTION] Firing Onetime Schedule ID {row['id']} and deactivating.")
                 self._trigger(row, minute_key, deactivate=True)
             elif row['announcement_type'] == 'weekly' and row['schedule_day'] == current_day:
+                print(f"[TESTING - ACTION] Firing Weekly Schedule ID {row['id']}")
                 self._trigger(row, minute_key, deactivate=False)
+            else:
+                print(f"[TESTING - FAILED MATCH] ID {row['id']} matched time but failed date/day condition.")
 
     def _trigger(self, row, minute_key, deactivate):
         conn = database.get_connection()
@@ -141,9 +160,8 @@ class AnnouncementScheduler:
             status = 'failed'
             details = 'Audio files missing'
         else:
-            from app import pending_audio_queue, queue_lock
-            with queue_lock:
-                pending_audio_queue.append({
+            with self.queue_lock:
+                self.audio_queue.append({
                     'task_id': f"sched_{schedule_id}_{int(time.time())}",
                     'files': audio_urls,
                     'repeat_count': repeat_count,
