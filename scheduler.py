@@ -1,6 +1,7 @@
 import threading
 import time
 import os
+import psycopg2
 from datetime import datetime, timedelta
 import database
 import tts_engine
@@ -56,20 +57,32 @@ class AnnouncementScheduler:
                 if is_valid_today:
                     schedule_id = row['id']
                     lang = row['language']
-                    audio_en = row['audio_en_path']
-                    audio_hi = row['audio_hi_path']
 
-                    needs_update = False
-                    if lang in ('en', 'both') and (not audio_en or not os.path.exists(audio_en)):
-                        audio_en = tts_engine.generate_audio(row['text_en'], 'en', f"sched_{schedule_id}_en.mp3")
-                        needs_update = True
-                    if lang in ('hi', 'both') and (not audio_hi or not os.path.exists(audio_hi)):
-                        audio_hi = tts_engine.generate_audio(row['text_hi'], 'hi', f"sched_{schedule_id}_hi.mp3")
-                        needs_update = True
+                    # Aug 2026 fix: check the DB blob columns, not local disk.
+                    # Disk-based existence checks (os.path.exists) failed
+                    # silently on Render because the file was wiped on every
+                    # restart, even though the schedule itself was fine.
+                    needs_en = lang in ('en', 'both') and row['audio_en_data'] is None
+                    needs_hi = lang in ('hi', 'both') and row['audio_hi_data'] is None
 
-                    if needs_update:
+                    if needs_en or needs_hi:
+                        audio_en_bytes = tts_engine.generate_audio_bytes(row['text_en'], 'en') if needs_en else None
+                        audio_hi_bytes = tts_engine.generate_audio_bytes(row['text_hi'], 'hi') if needs_hi else None
+
                         update_cur = conn.cursor()
-                        update_cur.execute("UPDATE schedules SET audio_en_path = %s, audio_hi_path = %s WHERE id = %s", (audio_en, audio_hi, schedule_id))
+                        if needs_en and needs_hi:
+                            update_cur.execute(
+                                "UPDATE schedules SET audio_en_data = %s, audio_hi_data = %s WHERE id = %s",
+                                (psycopg2.Binary(audio_en_bytes) if audio_en_bytes else None,
+                                 psycopg2.Binary(audio_hi_bytes) if audio_hi_bytes else None, schedule_id))
+                        elif needs_en:
+                            update_cur.execute(
+                                "UPDATE schedules SET audio_en_data = %s WHERE id = %s",
+                                (psycopg2.Binary(audio_en_bytes) if audio_en_bytes else None, schedule_id))
+                        elif needs_hi:
+                            update_cur.execute(
+                                "UPDATE schedules SET audio_hi_data = %s WHERE id = %s",
+                                (psycopg2.Binary(audio_hi_bytes) if audio_hi_bytes else None, schedule_id))
                         conn.commit()
                         print(f"[PRE-GEN] Advance audio ready for schedule ID {schedule_id}")
         finally:
@@ -113,11 +126,13 @@ class AnnouncementScheduler:
 
         schedule_id, title, language, repeat_count = row['id'], row['title'], row['language'], row['repeat_count'] or 1
 
+        # Aug 2026 fix: audio is served from the DB via /audio/<id>/<lang>
+        # instead of a static file path, so it survives disk wipes.
         audio_urls = []
-        if row['audio_en_path'] and os.path.exists(row['audio_en_path']):
-            audio_urls.append(f"/static/audio/{os.path.basename(row['audio_en_path'])}")
-        if row['audio_hi_path'] and os.path.exists(row['audio_hi_path']):
-            audio_urls.append(f"/static/audio/{os.path.basename(row['audio_hi_path'])}")
+        if row['audio_en_data'] is not None:
+            audio_urls.append(f"/audio/{schedule_id}/en")
+        if row['audio_hi_data'] is not None:
+            audio_urls.append(f"/audio/{schedule_id}/hi")
 
         status = 'success'
         details = 'Queued to Browser Engine'

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ college_short }} | Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy: #12213b;
+            --deck: #0e1422;
+            --deck-2: #141c30;
+            --amber: #e0930f;
+            --cyan: #1090a3;
+            --coral: #d9435f;
+            --mist: #a9b4cc;
+            --white: #eef2f8;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--deck);
+            background-image:
+                radial-gradient(circle at 15% 10%, rgba(224,147,15,0.10) 0%, transparent 40%),
+                radial-gradient(circle at 85% 90%, rgba(16,144,163,0.10) 0%, transparent 40%);
+            font-family: 'Inter', sans-serif;
+            padding: 20px;
+        }
+        .login-card {
+            width: 380px; max-width: 100%;
+            background: linear-gradient(165deg, var(--deck-2), var(--deck) 70%);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-top: 2px solid var(--amber);
+            border-radius: 18px;
+            padding: 34px 30px;
+            box-shadow: 0 24px 50px -20px rgba(0,0,0,.7);
+        }
+        .brand-title {
+            text-align: center; margin-bottom: 26px;
+        }
+        .brand-title .kgic { font-family: 'Space Grotesk', sans-serif; color: var(--amber); font-weight: 700; font-size: 1.1rem; letter-spacing: .06em; }
+        .brand-title h1 { font-family: 'Space Grotesk', sans-serif; color: var(--white); font-size: 1.3rem; margin-top: 6px; }
+        .brand-title p { color: var(--mist); font-size: .82rem; margin-top: 4px; }
+
+        .flash-error {
+            background: rgba(217,67,95,.12); border: 1px solid rgba(217,67,95,.4);
+            color: #ffb3c0; padding: 10px 14px; border-radius: 9px; font-size: .82rem;
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block; font-size: .68rem; color: #8791a8; margin-bottom: 7px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: .1em;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%; background: rgba(0,0,0,.4); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px; padding: 12px 14px; color: var(--white); font-size: .92rem;
+            margin-bottom: 18px;
+        }
+        input:focus { outline: none; border-color: var(--cyan); }
+
+        button {
+            width: 100%; padding: 14px; border: none; border-radius: 12px;
+            font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: .92rem;
+            cursor: pointer; color: #0a0a10;
+            background: linear-gradient(160deg, #7ee8f5, var(--cyan) 55%);
+            box-shadow: 0 4px 0 #0f6a78;
+        }
+        button:active { transform: translateY(2px); box-shadow: 0 2px 0 #0f6a78; }
+
+        .footnote { text-align: center; margin-top: 20px; font-size: .72rem; color: #6b7690; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="brand-title">
+            <div class="kgic">{{ college_short | default('KGIC') }}</div>
+            <h1>PA Control Tower</h1>
+            <p>{{ college_name | default('Kanchan Girls Inter College') }}</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-error">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <label>Username</label>
+            <input type="text" name="username" required autofocus>
+            <label>Password</label>
+            <input type="password" name="password" required>
+            <button type="submit">Login to Dashboard</button>
+        </form>
+        <div class="footnote">Sirf authorized school staff ke liye</div>
+    </div>
+</body>
+</html>
