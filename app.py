@@ -300,7 +300,15 @@ def mark_audio_done():
     task_id = data.get('task_id')
     conn = database.get_connection()
     cur = conn.cursor()
-    cur.execute("INSERT INTO logs (title, trigger_type, status, details) VALUES (%s, %s, %s, %s)", ("Audio Played Successfully", "manual", "success", f"Task ID: {task_id}"))
+    
+    now_ist = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
+    # YAHAN CHANGE HAI: query mein 'triggered_at' aur aakhri mein 'now_ist' add kiya hai 👇
+    cur.execute(
+        "INSERT INTO logs (title, trigger_type, status, details, triggered_at) VALUES (%s, %s, %s, %s, %s)", 
+        ("Audio Played Successfully", "manual", "success", f"Task ID: {task_id}", now_ist)
+    )
+    
     conn.commit()
     conn.close()
     return jsonify({'success': True})

@@ -18,7 +18,6 @@ class AnnouncementScheduler:
         self._thread = None
         self._running = False
         self.audio_queue = audio_queue
-        # YAHI LINE MISSING THI JISSE CRASH HUA 👇
         self.queue_lock = queue_lock
 
     def start(self):
@@ -61,10 +60,6 @@ class AnnouncementScheduler:
                     schedule_id = row['id']
                     lang = row['language']
 
-                    # Aug 2026 fix: check the DB blob columns, not local disk.
-                    # Disk-based existence checks (os.path.exists) failed
-                    # silently on Render because the file was wiped on every
-                    # restart, even though the schedule itself was fine.
                     needs_en = lang in ('en', 'both') and row['audio_en_data'] is None
                     needs_hi = lang in ('hi', 'both') and row['audio_hi_data'] is None
 
@@ -98,7 +93,6 @@ class AnnouncementScheduler:
         current_day = now.strftime('%A')
         minute_key = f"{current_date} {current_time}"
 
-        # 🟢 TESTING PRINT 1: Server ka actual time check karein
         print(f"\n[TESTING - SCHEDULER] Woke up at Server Time: {current_time} | Day: {current_day} | Date: {current_date}")
 
         conn = database.get_connection()
@@ -107,13 +101,11 @@ class AnnouncementScheduler:
             cur.execute("SELECT * FROM schedules WHERE is_active = 1 AND schedule_time = %s", (current_time,))
             due_rows = cur.fetchall()
             
-            # 🟢 TESTING PRINT 2: Database se kitne schedule match hue
             print(f"[TESTING - DB] Found {len(due_rows)} active schedule(s) matching exactly {current_time}")
         finally:
             conn.close()
 
         for row in due_rows:
-            # 🟢 TESTING PRINT 3: Agar match mila, toh uski details
             print(f"[TESTING - TRIGGER] Processing Schedule ID: {row['id']} | Title: '{row['title']}' | Type: {row['announcement_type']}")
             
             if row['last_triggered'] == minute_key:
@@ -145,8 +137,6 @@ class AnnouncementScheduler:
 
         schedule_id, title, language, repeat_count = row['id'], row['title'], row['language'], row['repeat_count'] or 1
 
-        # Aug 2026 fix: audio is served from the DB via /audio/<id>/<lang>
-        # instead of a static file path, so it survives disk wipes.
         audio_urls = []
         if row['audio_en_data'] is not None:
             audio_urls.append(f"/audio/{schedule_id}/en")
@@ -171,8 +161,15 @@ class AnnouncementScheduler:
         log_conn = database.get_connection()
         try:
             log_cur = log_conn.cursor()
-            log_cur.execute("INSERT INTO logs (schedule_id, title, language, trigger_type, status, details) VALUES (%s, %s, %s, 'scheduled', %s, %s)",
-                             (schedule_id, title, language, status, details))
+            
+            # 🟢 FIX: IST Time create kiya
+            now_ist = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
+            # YAHAN CHANGE HAI: Query mein 'triggered_at' column add kiya aur aakhri mein 'now_ist' value pass ki 👇
+            log_cur.execute(
+                "INSERT INTO logs (schedule_id, title, language, trigger_type, status, details, triggered_at) VALUES (%s, %s, %s, 'scheduled', %s, %s, %s)",
+                (schedule_id, title, language, status, details, now_ist)
+            )
             log_conn.commit()
         finally:
             log_conn.close()
