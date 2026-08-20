@@ -34,6 +34,21 @@ def dashboard():
     conn.close()
     return render_template('index.html', college_name=COLLEGE_NAME, college_short=COLLEGE_SHORT, schedules=schedules, logs=logs, today=datetime.now().strftime('%Y-%m-%d'))
 
+# Background worker function for audio generation
+def async_generate_and_update(schedule_id, text_en, text_hi, language):
+    audio_en_path, audio_hi_path = None, None
+    if language in ('en', 'both') and text_en:
+        audio_en_path = tts_engine.generate_audio(text_en, 'en', f"sched_{schedule_id}_en.mp3")
+    if language in ('hi', 'both') and text_hi:
+        audio_hi_path = tts_engine.generate_audio(text_hi, 'hi', f"sched_{schedule_id}_hi.mp3")
+
+    conn = database.get_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE schedules SET audio_en_path = %s, audio_hi_path = %s WHERE id = %s", (audio_en_path, audio_hi_path, schedule_id))
+    conn.commit()
+    conn.close()
+    print(f"[SYSTEM] Background audio generation completed for Schedule ID {schedule_id}")
+
 @app.route('/api/schedules', methods=['POST'])
 def create_schedule():
     f = request.form
@@ -75,7 +90,6 @@ def create_schedule():
         ''', (title, text_en, text_hi, language, announcement_type, schedule_time, schedule_date, schedule_day, repeat_count, schedule_id))
         flash(f'"{title}" updated successfully.', 'success')
     else:
-        # Postgres requires RETURNING id
         cur.execute('''
             INSERT INTO schedules
                 (title, text_en, text_hi, language, announcement_type, schedule_time, schedule_date, schedule_day, repeat_count)
@@ -85,18 +99,11 @@ def create_schedule():
         flash(f'"{title}" scheduled successfully.', 'success')
 
     conn.commit()
-    audio_en_path, audio_hi_path = None, None
-    if language in ('en', 'both') and text_en:
-        audio_en_path = tts_engine.generate_audio(text_en, 'en', f"sched_{schedule_id}_en.mp3")
-    if language in ('hi', 'both') and text_hi:
-        audio_hi_path = tts_engine.generate_audio(text_hi, 'hi', f"sched_{schedule_id}_hi.mp3")
-
-    if (language in ('en', 'both') and not audio_en_path) or (language in ('hi', 'both') and not audio_hi_path):
-        flash(f'Audio generation failed for one or more languages. Check internet connection.', 'error')
-
-    cur.execute("UPDATE schedules SET audio_en_path = %s, audio_hi_path = %s WHERE id = %s", (audio_en_path, audio_hi_path, schedule_id))
-    conn.commit()
     conn.close()
+
+    # Fast Threading Implementation: Pass audio generation to background worker
+    threading.Thread(target=async_generate_and_update, args=(schedule_id, text_en, text_hi, language), daemon=True).start()
+
     return redirect(url_for('dashboard'))
 
 @app.route('/api/schedules/<int:schedule_id>/toggle', methods=['POST'])
@@ -141,13 +148,36 @@ def test_schedule(schedule_id):
     cur = conn.cursor()
     cur.execute("SELECT * FROM schedules WHERE id = %s", (schedule_id,))
     row = cur.fetchone()
-    conn.close()
-    if not row: return jsonify({'error': 'Schedule not found'}), 404
+    
+    if not row: 
+        conn.close()
+        return jsonify({'error': 'Schedule not found'}), 404
 
-    audio_urls = [get_audio_url(row['audio_en_path']), get_audio_url(row['audio_hi_path'])]
+    audio_en_path = row['audio_en_path']
+    audio_hi_path = row['audio_hi_path']
+    needs_update = False
+
+    # Fallback Logic: Generate on-the-fly if missing
+    if row['language'] in ('en', 'both') and row['text_en']:
+        if not audio_en_path or not os.path.exists(audio_en_path):
+            audio_en_path = tts_engine.generate_audio(row['text_en'], 'en', f"sched_{schedule_id}_en.mp3")
+            needs_update = True
+
+    if row['language'] in ('hi', 'both') and row['text_hi']:
+        if not audio_hi_path or not os.path.exists(audio_hi_path):
+            audio_hi_path = tts_engine.generate_audio(row['text_hi'], 'hi', f"sched_{schedule_id}_hi.mp3")
+            needs_update = True
+
+    if needs_update:
+        cur.execute("UPDATE schedules SET audio_en_path = %s, audio_hi_path = %s WHERE id = %s", (audio_en_path, audio_hi_path, schedule_id))
+        conn.commit()
+    
+    conn.close()
+
+    audio_urls = [get_audio_url(audio_en_path), get_audio_url(audio_hi_path)]
     valid_urls = [u for u in audio_urls if u]
 
-    if not valid_urls: return jsonify({'error': 'Audio files not found. Try editing to regenerate.'}), 404
+    if not valid_urls: return jsonify({'error': 'Audio generation failed.'}), 500
 
     with queue_lock:
         pending_audio_queue.append({'task_id': f"test_{schedule_id}_{int(time.time())}", 'files': valid_urls, 'repeat_count': 1, 'log_data': None})

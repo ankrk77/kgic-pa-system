@@ -656,7 +656,8 @@
                 beacon.classList.add('live');
                 renderToastPopup("Cloud Audio Engine Started! Monitoring for broadcasts...");
 
-                pollInterval = setInterval(checkCloudForAudio, 5000);
+                // Faster Audio Polling (3 seconds) for zero-delay response
+                pollInterval = setInterval(checkCloudForAudio, 3000);
             } else {
                 btn.classList.remove('online');
                 label.innerText = 'Engine Standby';
@@ -802,11 +803,19 @@
             closeModal();
         });
 
-        // --- 5. BACKEND CALLS ---
+        // --- 5. BACKEND CALLS & FORM UI FIXES ---
+        
+        // Add Schedule Loading Feedback
+        document.getElementById('automationForm').addEventListener('submit', function() {
+            const btn = document.getElementById('automationSubmitBtn');
+            btn.innerText = "Deploying Node... Please wait ⏳";
+            btn.style.opacity = '0.7';
+        });
+
         document.getElementById('speakNowForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const btn = document.getElementById('sn_submit_btn');
-            btn.disabled = true; btn.innerText = "Transmitting to Cloud...";
+            btn.disabled = true; btn.innerText = "Transmitting to Cloud... 🚀";
 
             fetch('/api/speak_now', { method: 'POST', body: new FormData(this) })
             .then(res => res.json()).then(payload => {
@@ -842,7 +851,7 @@
             }
         }
 
-        // --- 6. 3D TILT INTERACTION (desktop pointer only, respects reduced-motion) ---
+        // --- 6. 3D TILT INTERACTION (Lag Fixed via requestAnimationFrame) ---
         function initTilt() {
             const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
             const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -850,13 +859,21 @@
 
             const maxTilt = 4.5;
             document.querySelectorAll('.tilt-card').forEach(card => {
+                let ticking = false; // Debounce flag to stop browser hang
+                
                 card.addEventListener('mousemove', e => {
-                    const r = card.getBoundingClientRect();
-                    const px = (e.clientX - r.left) / r.width;
-                    const py = (e.clientY - r.top) / r.height;
-                    const rx = (0.5 - py) * maxTilt * 2;
-                    const ry = (px - 0.5) * maxTilt * 2;
-                    card.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg) translateZ(4px)`;
+                    if (!ticking) {
+                        window.requestAnimationFrame(() => {
+                            const r = card.getBoundingClientRect();
+                            const px = (e.clientX - r.left) / r.width;
+                            const py = (e.clientY - r.top) / r.height;
+                            const rx = (0.5 - py) * maxTilt * 2;
+                            const ry = (px - 0.5) * maxTilt * 2;
+                            card.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg) translateZ(4px)`;
+                            ticking = false;
+                        });
+                        ticking = true;
+                    }
                 });
                 card.addEventListener('mouseleave', () => {
                     card.style.transform = 'rotateX(0deg) rotateY(0deg) translateZ(0px)';
