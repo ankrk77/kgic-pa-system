@@ -23,23 +23,12 @@ COLLEGE_NAME = "Kanchan Girls Inter College"
 COLLEGE_SHORT = "KGIC"
 
 # --- Aug 2026 fix: authentication -------------------------------------------
-# Previously the dashboard and every /api/* route were completely open to
-# anyone with the link — no login, no password. Anyone could view, delete,
-# or edit schedules, or trigger a live broadcast on the school speaker.
-# ADMIN_USERNAME / ADMIN_PASSWORD should be set as environment variables in
-# your hosting dashboard (Render/Railway "Environment" tab). The defaults
-# below are ONLY a fallback for local testing — change them before deploying.
 ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'kgic-change-this-password')
 
 pending_audio_queue = []
 queue_lock = threading.Lock()
 
-# Ephemeral, in-memory cache for one-off "Instant Manual Broadcast" audio.
-# These clips are meant to be played once and don't need to survive a
-# server restart the way scheduled announcements do, so they don't need a
-# database row — just enough lifetime to be polled and played by the
-# Browser Engine.
 manual_audio_cache = {}  # key -> (bytes, created_at)
 MANUAL_AUDIO_TTL_SECONDS = 900  # 15 minutes
 
@@ -62,9 +51,8 @@ def login_required(view):
     return wrapped
 
 
-database.init_db()
+# 🟢 FIX: Initialize scheduler object, but DO NOT start it or DB here yet
 scheduler = AnnouncementScheduler(pending_audio_queue, queue_lock)
-scheduler.start()
 
 
 # --- Auth routes -------------------------------------------------------------
@@ -73,8 +61,6 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username', '')
         password = request.form.get('password', '')
-        # hmac.compare_digest avoids leaking timing information about how
-        # much of the password matched.
         valid = hmac.compare_digest(username, ADMIN_USERNAME) & hmac.compare_digest(password, ADMIN_PASSWORD)
         if valid:
             session['logged_in'] = True
@@ -91,12 +77,6 @@ def logout():
     return redirect(url_for('login'))
 
 
-# --- Health check for uptime pings ------------------------------------------
-# Render's free tier suspends the service after ~15 minutes without an
-# incoming HTTP request. Point a free external monitor (UptimeRobot,
-# cron-job.org, etc.) at this URL every 5-10 minutes to keep the service
-# (and therefore the background scheduler) awake. Deliberately does no DB
-# work so it stays fast and cheap to call.
 @app.route('/healthz')
 def healthz():
     return jsonify({'status': 'ok', 'time': datetime.now().isoformat()})
@@ -157,7 +137,6 @@ def create_schedule():
         ''', (title, text_en, text_hi, language, announcement_type, schedule_time, schedule_date, schedule_day, repeat_count, schedule_id))
         flash(f'"{title}" updated successfully.', 'success')
     else:
-        # Postgres requires RETURNING id
         cur.execute('''
             INSERT INTO schedules
                 (title, text_en, text_hi, language, announcement_type, schedule_time, schedule_date, schedule_day, repeat_count)
@@ -168,8 +147,6 @@ def create_schedule():
 
     conn.commit()
 
-    # Aug 2026 fix: audio bytes go straight into Postgres (BYTEA), never to
-    # local disk, so they survive Render's ephemeral filesystem resets.
     audio_en_bytes, audio_hi_bytes = None, None
     if language in ('en', 'both') and text_en:
         audio_en_bytes = tts_engine.generate_audio_bytes(text_en, 'en')
@@ -213,8 +190,6 @@ def toggle_schedule(schedule_id):
 def delete_schedule(schedule_id):
     conn = database.get_connection()
     cur = conn.cursor()
-    # Audio lives in the same row (BYTEA columns), so deleting the row is
-    # enough — no separate file cleanup needed anymore.
     cur.execute("DELETE FROM schedules WHERE id = %s", (schedule_id,))
     conn.commit()
     conn.close()
@@ -282,7 +257,6 @@ def speak_now():
     return jsonify({'success': True, 'message': 'Broadcasting queued.'})
 
 
-# --- Audio serving (DB-backed, survives disk wipes) -------------------------
 @app.route('/audio/<int:schedule_id>/<lang>')
 @login_required
 def serve_schedule_audio(schedule_id, lang):
@@ -385,7 +359,15 @@ def generate_missing_audio_on_startup():
     print("[SYSTEM] Startup audio verification complete.")
 
 
-threading.Thread(target=generate_missing_audio_on_startup, daemon=True).start()
+# 🟢 FIX: Lazy Initialization via @app.before_request
+@app.before_request
+def initialize_system():
+    if not app.config.get('SYSTEM_INITIALIZED'):
+        database.init_db()
+        scheduler.start()
+        threading.Thread(target=generate_missing_audio_on_startup, daemon=True).start()
+        app.config['SYSTEM_INITIALIZED'] = True
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
